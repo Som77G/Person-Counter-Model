@@ -1,0 +1,19 @@
+services:
+  person_counter:
+    build:
+      context: ./person-counter   # points to app folder
+      dockerfile: Dockerfile
+
+    container_name: person_counter
+
+    restart: unless-stopped
+
+    environment:
+      - RTSP_URL=rtsp://admin:admin123@10.45.0.4:554/avstream/channel=1/stream=0.sdp
+
+    networks:
+      - app_net
+
+
+networks:
+  app_net:
