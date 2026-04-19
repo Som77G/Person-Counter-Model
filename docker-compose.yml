@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
 
     environment:
-      - RTSP_URL=rtsp://admin:admin123@10.45.0.4:554/avstream/channel=1/stream=0.sdp
+      - RTSP_URL=rtsp://10.45.0.2:8554/live
 
     networks:
       - app_net

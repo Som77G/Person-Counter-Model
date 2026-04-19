@@ -1,27 +1,3 @@
-# from ultralytics import YOLO
-
-# class PersonDetector:
-#     def __init__(self, model_path, conf_threshold):
-#         self.model = YOLO(model_path)
-#         self.model.fuse()   # speeds up inference
-#         self.conf_threshold = conf_threshold
-
-#     def detect(self, frame):
-#         results = self.model(frame, verbose=False)[0]
-
-#         persons = []
-#         for box in results.boxes:
-#             cls = int(box.cls[0])
-#             conf = float(box.conf[0])
-
-#             # COCO class 0 = person
-#             if cls == 0 and conf > self.conf_threshold:
-#                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-#                 persons.append((x1, y1, x2, y2))
-
-#         return persons
-
-
 import cv2
 import numpy as np
 import onnxruntime as ort
