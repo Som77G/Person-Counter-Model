@@ -133,47 +133,77 @@ def main():
             if frame_id % FRAME_SKIP != 0:
                 continue
 
-            # ---------- CAPTURE TIME ----------
-            capture_time = time.time()
+            # ---------- FRAME START ----------
+            frame_start = time.time()
 
+            # ---------- PREPROCESS ----------
+            t0 = time.time()
             frame = resize_frame(frame)
-
-            # ---------- PROCESSING LATENCY ----------
             t1 = time.time()
-            detections = detector.detect(frame)
+
+            preprocess_latency = (t1 - t0) * 1000
+
+            # ---------- INFERENCE ----------
             t2 = time.time()
+            detections = detector.detect(frame)
+            t3 = time.time()
 
-            processing_latency = (t2 - t1) * 1000  # ms
+            inference_latency = (t3 - t2) * 1000
 
+            # ---------- POSTPROCESS ----------
+            t4 = time.time()
             count = counter.update(detections)
-
-            # ---------- DRAW ----------
             frame = draw_boxes(frame, detections, count)
+            t5 = time.time()
 
-            # ---------- TOTAL LATENCY ----------
-            current_time = time.time()
-            total_latency = (current_time - capture_time) * 1000
-            network_latency = total_latency - processing_latency
+            postprocess_latency = (t5 - t4) * 1000
 
-            latency_history.append(total_latency)
-
-            # ---------- OVERLAY ----------
-            cv2.putText(frame, f"Total: {total_latency:.1f} ms",
-                        (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-
-            cv2.putText(frame, f"Proc: {processing_latency:.1f} ms",
-                        (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-            cv2.putText(frame, f"Net: {network_latency:.1f} ms",
-                        (10, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-
-            # ---------- QUEUE ----------
+                        # ---------- ENCODE / QUEUE ----------
+            t6 = time.time()
             if not frame_queue.full():
                 frame_queue.put(frame)
+            t7 = time.time()
 
+            encode_latency = (t7 - t6) * 1000
+
+            # ---------- END-TO-END ----------
+            frame_end = time.time()
+            total_latency = (frame_end - frame_start) * 1000
+
+            # ---------- FPS ----------
+            fps = 1.0 / (frame_end - frame_start)
+
+            # ---------- STORE ----------
+            latency_history.append(total_latency)
+
+            cv2.putText(frame, f"RTT*: {total_latency:.1f} ms",
+                        (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+
+            cv2.putText(frame, f"Inf: {inference_latency:.1f} ms",
+                        (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+            cv2.putText(frame, f"Pre: {preprocess_latency:.1f} ms",
+                        (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+
+            cv2.putText(frame, f"Post: {postprocess_latency:.1f} ms",
+                        (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 255), 2)
+
+            cv2.putText(frame, f"Enc: {encode_latency:.1f} ms",
+                        (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 128, 255), 2)
+
+            cv2.putText(frame, f"FPS: {fps:.2f}",
+                        (10, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 150), 2)
+            
             if frame_id % 30 == 0:
-                print(f"[INFO] Count: {count} Total: {total_latency:.1f} ms | Proc: {processing_latency:.1f} ms")
-
+                print(
+                    f"[INFO] Count: {count} | "
+                    f"RTT*: {total_latency:.1f} ms | "
+                    f"Inf: {inference_latency:.1f} ms | "
+                    f"Pre: {preprocess_latency:.1f} ms | "
+                    f"Post: {postprocess_latency:.1f} ms | "
+                    f"Enc: {encode_latency:.1f} ms | "
+                    f"FPS: {fps:.2f}"
+                )
     except KeyboardInterrupt:
         print("\n Stopping service...")
 

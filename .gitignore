@@ -1,6 +1,7 @@
 # Virtual environments
 venv/
 venvonnx/
+venvTest/
 
 # Python
 __pycache__/
@@ -41,3 +42,5 @@ Thumbs.db
 
 # Logs
 *.log
+metrics.txt
+evaluation
